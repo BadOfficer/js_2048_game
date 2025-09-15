@@ -18,6 +18,9 @@ class Game {
   static STATUS_PLAYING = 'playing';
   static STATUS_WIN = 'win';
   static STATUS_LOSE = 'lose';
+
+  #lastAddedCellCoords = {};
+  #prevState;
   /**
    * Creates a new game instance.
    *
@@ -40,64 +43,26 @@ class Game {
   }
 
   moveLeft() {
-    const prevState = JSON.stringify(this.state);
-
     for (const row of this.state) {
       this.#baseMove(row);
     }
-
-    if (this.#compareState(prevState)) {
-      this.#fillRandomCell();
-    }
-
-    if (!this.#canMove()) {
-      this.status = Game.STATUS_LOSE;
-    }
-
-    this.#changeFirstMoveStatus();
   }
   moveRight() {
-    const prevState = JSON.stringify(this.state);
-
     for (const row of this.state) {
       this.#reverseRow(row);
       this.#baseMove(row);
       this.#reverseRow(row);
     }
-
-    if (this.#compareState(prevState)) {
-      this.#fillRandomCell();
-    }
-
-    if (!this.#canMove()) {
-      this.status = Game.STATUS_LOSE;
-    }
-
-    this.#changeFirstMoveStatus();
   }
   moveUp() {
-    const prevState = JSON.stringify(this.state);
-
     this.#transposeMatrix(this.state);
 
     for (const row of this.state) {
       this.#baseMove(row);
     }
     this.#transposeMatrix(this.state);
-
-    if (this.#compareState(prevState)) {
-      this.#fillRandomCell();
-    }
-
-    if (!this.#canMove()) {
-      this.status = Game.STATUS_LOSE;
-    }
-
-    this.#changeFirstMoveStatus();
   }
   moveDown() {
-    const prevState = JSON.stringify(this.state);
-
     this.#transposeMatrix(this.state);
 
     for (const row of this.state) {
@@ -106,16 +71,6 @@ class Game {
       this.#reverseRow(row);
     }
     this.#transposeMatrix(this.state);
-
-    if (this.#compareState(prevState)) {
-      this.#fillRandomCell();
-    }
-
-    if (!this.#canMove()) {
-      this.status = Game.STATUS_LOSE;
-    }
-
-    this.#changeFirstMoveStatus();
   }
 
   /**
@@ -146,11 +101,20 @@ class Game {
     return this.status;
   }
 
+  getLastAddedCell() {
+    return this.#lastAddedCellCoords;
+  }
+
+  getPrevState() {
+    return this.#prevState;
+  }
+
   /**
    * Starts the game.
    */
   start() {
     this.status = Game.STATUS_PLAYING;
+    this.isFirstMove = false;
 
     for (let i = 1; i <= 2; i++) {
       const initialRowIndex = this.#getRandomIndex();
@@ -168,6 +132,7 @@ class Game {
     this.status = Game.STATUS_IDLE;
     this.score = 0;
     this.state = initialStateMatrix.map((row) => [...row]);
+    this.isFirstMove = true;
   }
 
   #getRandomIndex(initialMin = 0, initialMax = 4) {
@@ -226,6 +191,11 @@ class Game {
 
     this.state[newRandomRowIndex][newRandomColIndex] =
       this.#getRandomCellValue();
+
+    this.#lastAddedCellCoords = {
+      rowIndex: newRandomRowIndex,
+      colIndex: newRandomColIndex,
+    };
   }
 
   #canMove() {
@@ -256,18 +226,55 @@ class Game {
     this.#compress(row);
   }
 
-  #compareState(prevState) {
+  #compareState() {
     const newState = JSON.stringify(this.state);
 
-    return prevState !== newState;
+    if (this.#prevState !== newState) {
+      return true;
+    } else {
+      this.#lastAddedCellCoords = {};
+
+      return false;
+    }
   }
 
   #changeFirstMoveStatus() {
     if (this.isFirstMove) {
       this.start();
       this.status = Game.STATUS_PLAYING;
-      this.isFirstMove = false;
     }
+  }
+
+  move(direction) {
+    this.#prevState = JSON.stringify(this.state);
+
+    switch (direction) {
+      case 'left':
+        this.moveLeft();
+        break;
+
+      case 'right':
+        this.moveRight();
+        break;
+
+      case 'up':
+        this.moveUp();
+        break;
+
+      case 'down':
+        this.moveDown();
+        break;
+    }
+
+    if (this.#compareState()) {
+      this.#fillRandomCell();
+    }
+
+    if (!this.#canMove()) {
+      this.status = Game.STATUS_LOSE;
+    }
+
+    this.#changeFirstMoveStatus();
   }
 }
 
