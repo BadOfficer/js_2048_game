@@ -68,7 +68,9 @@ function updateScore() {
 function updateCells() {
   for (let i = 0; i < boardRows.length; i++) {
     for (let j = 0; j < boardRows[i].cells.length; j++) {
+      boardRows[i].cells[j].className = 'field-cell';
       boardRows[i].cells[j].textContent = game.getState()[i][j] || '';
+      boardRows[i].cells[j].classList.add(`field-cell--${game.getState()[i][j]}`);
     }
   }
 }
@@ -101,4 +103,3 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Write your code here
